@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PROTECTED_USER
+  FAMILY_MEMBER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PermissionLevel {
+  VIEW_ONLY
+  RECEIVE_ALERTS
+  MANAGE_CONTACTS
+  ADMIN_PROFILE
+}
+
+enum AlertType {
+  FALL_DETECTION
+  AGGRESSION_DETECTION
+  PANIC_BUTTON
+  VOICE_KEYWORD
+  GEOFENCE_EXIT
+  MALAISE
+  UNKNOWN
+}
+
+enum AlertStatus {
+  CREATED
+  SENT
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  FALSE_ALARM
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EvidenceType {
+  AUDIO
+  VIDEO
+  PHOTO
+}
+
+enum NotificationChannel {
+  PUSH
+  SMS
+  EMAIL
+  CALL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  firstName    String?
+  lastName     String?
+  email        String   @unique
+  phone        String?
+  passwordHash String?
+  role         UserRole @default(PROTECTED_USER)
+
+  protectedProfile ProtectedProfile?
+  subscription     Subscription?
+
+  familyLinksAsProtected FamilyLink[] @relation("ProtectedUserFamilyLinks")
+  familyLinksAsFamily    FamilyLink[] @relation("FamilyUserLinks")
+
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+model ProtectedProfile {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @unique @db.Uuid
+  birthDate     DateTime?
+  address       String?
+  emergencyNote String?
+  medicalInfo   String?
+  isActive      Boolean   @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emergencyContacts EmergencyContact[]
+  alerts            Alert[]
+  safeZones         SafeZone[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FamilyLink {
+  id              String          @id @default(uuid()) @db.Uuid
+  protectedUserId String          @db.Uuid
+  familyUserId    String          @db.Uuid
+  relationship    String?
+  permissionLevel PermissionLevel @default(RECEIVE_ALERTS)
+
+  protectedUser User @relation("ProtectedUserFamilyLinks", fields: [protectedUserId], references: [id], onDelete: Cascade)
+  familyUser    User @relation("FamilyUserLinks", fields: [familyUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([protectedUserId, familyUserId])
+  @@index([protectedUserId])
+  @@index([familyUserId])
+}
+
+model EmergencyContact {
+  id                 String  @id @default(uuid()) @db.Uuid
+  protectedProfileId String  @db.Uuid
+  name               String
+  phone              String
+  email              String?
+  priority           Int     @default(1)
+  receiveSms         Boolean @default(true)
+  receivePush        Boolean @default(false)
+  receiveEmail       Boolean @default(false)
+  receiveCall        Boolean @default(false)
+
+  protectedProfile ProtectedProfile @relation(fields: [protectedProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protectedProfileId])
+  @@index([priority])
+}
+
+model Alert {
+  id                 String      @id @default(uuid()) @db.Uuid
+  protectedProfileId String      @db.Uuid
+  type               AlertType
+  status             AlertStatus @default(CREATED)
+  severity           Severity    @default(MEDIUM)
+  message            String?
+  resolvedAt         DateTime?
+
+  protectedProfile ProtectedProfile @relation(fields: [protectedProfileId], references: [id], onDelete: Cascade)
+
+  location      Location?
+  evidence      Evidence[]
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protectedProfileId])
+  @@index([type])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model Location {
+  id            String   @id @default(uuid()) @db.Uuid
+  alertId       String   @unique @db.Uuid
+  latitude      Decimal  @db.Decimal(10, 7)
+  longitude     Decimal  @db.Decimal(10, 7)
+  accuracy      Decimal? @db.Decimal(10, 2)
+  googleMapsUrl String?
+  createdAt     DateTime @default(now())
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+}
+
+model Evidence {
+  id        String       @id @default(uuid()) @db.Uuid
+  alertId   String       @db.Uuid
+  type      EvidenceType
+  fileUrl   String
+  fileName  String?
+  mimeType  String?
+  size      Int?
+  duration  Int?
+  createdAt DateTime     @default(now())
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([type])
+}
+
+model Notification {
+  id          String              @id @default(uuid()) @db.Uuid
+  alertId     String              @db.Uuid
+  recipientId String?             @db.Uuid
+  channel     NotificationChannel
+  status      NotificationStatus  @default(PENDING)
+  sentAt      DateTime?
+  createdAt   DateTime            @default(now())
+
+  alert     Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  recipient User? @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([alertId])
+  @@index([recipientId])
+  @@index([status])
+}
+
+model SafeZone {
+  id                 String  @id @default(uuid()) @db.Uuid
+  protectedProfileId String  @db.Uuid
+  name               String
+  centerLatitude     Decimal @db.Decimal(10, 7)
+  centerLongitude    Decimal @db.Decimal(10, 7)
+  radiusMeters       Int
+  isActive           Boolean @default(true)
+
+  protectedProfile ProtectedProfile @relation(fields: [protectedProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protectedProfileId])
+  @@index([isActive])
+}
+
+model Subscription {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @unique @db.Uuid
+  plan      PlanType           @default(FREE)
+  status    SubscriptionStatus @default(ACTIVE)
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

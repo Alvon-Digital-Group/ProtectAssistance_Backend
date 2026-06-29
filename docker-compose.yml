@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: protect_assistance_postgres
+    restart: unless-stopped
+    ports:
+      - '55432:5432'
+    environment:
+      POSTGRES_USER: protect_user
+      POSTGRES_PASSWORD: protect_password
+      POSTGRES_DB: protect_assistance_db
+    volumes:
+      - protect_assistance_pgdata:/var/lib/postgresql/data
+
+volumes:
+  protect_assistance_pgdata:
