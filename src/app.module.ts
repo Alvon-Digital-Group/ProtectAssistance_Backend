@@ -6,6 +6,7 @@ import { HealthModule } from './modules/health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProtectedProfilesModule } from './modules/protected-profiles/protected-profiles.module';
+import { FamilyLinksModule } from './modules/family-links/family-links.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ProtectedProfilesModule } from './modules/protected-profiles/protected-
     DatabaseModule,
     AuthModule,
     ProtectedProfilesModule,
+    FamilyLinksModule,
   ],
 })
 export class AppModule {}

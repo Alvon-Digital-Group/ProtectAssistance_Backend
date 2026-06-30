@@ -266,17 +266,14 @@ BE-009 adds protected profile routes for the connected user.
 
 Available endpoints:
 
-````http
+```http
 GET /api/v1/protected-profiles/me
 POST /api/v1/protected-profiles/me
 PATCH /api/v1/protected-profiles/me
----
+```
+
 These routes are protected and require a JWT token.
-1-Login
-2. Authorize in Swagger
-3. Create protected profile
-4. Get protected profile
-5. Update protected profile
+1-Login 2. Authorize in Swagger 3. Create protected profile 4. Get protected profile 5. Update protected profile
 
 ## Useful commands
 
@@ -284,7 +281,7 @@ Build the project:
 
 ```bash
 npm run build
-````
+```
 
 Check Prisma schema:
 
