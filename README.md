@@ -186,6 +186,80 @@ GET /api/v1/auth/me
 
 Expected result: the API returns the connected user information.
 
+## Test BE-008 — Users Module
+
+BE-008 adds authenticated user profile routes.
+
+Available endpoints:
+
+```http
+GET /api/v1/users/me
+PATCH /api/v1/users/me
+```
+
+These routes are protected and require a JWT token.
+
+### 1. Login first
+
+Use Swagger:
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Copy the returned `accessToken`.
+
+### 2. Authorize in Swagger
+
+Click on:
+
+```text
+Authorize
+```
+
+Then enter:
+
+```text
+Bearer YOUR_ACCESS_TOKEN
+```
+
+### 3. Get current user
+
+```http
+GET /api/v1/users/me
+```
+
+Expected result: the API returns the connected user information without `passwordHash`.
+
+### 4. Update current user
+
+```http
+PATCH /api/v1/users/me
+```
+
+Example body:
+
+```json
+{
+  "firstName": "Yassine Updated",
+  "lastName": "Zaghla",
+  "phone": "+21699999999"
+}
+```
+
+Expected result: the API returns the updated user information.
+
+Important: the `passwordHash` must never be returned in the API response.
+
 ---
 
 ## Useful commands

@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -26,6 +27,12 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getSafeUserById(id: string) {
+    const user = await this.findById(id);
+
+    return this.sanitizeUser(user);
   }
 
   async createUser(data: {
@@ -52,5 +59,33 @@ export class UsersService {
         role: data.role ?? UserRole.PROTECTED_USER,
       },
     });
+  }
+
+  async updateCurrentUser(userId: string, updateUserDto: UpdateUserDto) {
+    const user = await this.findById(userId);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        firstName: updateUserDto.firstName,
+        lastName: updateUserDto.lastName,
+        phone: updateUserDto.phone,
+      },
+    });
+
+    return this.sanitizeUser(updatedUser);
+  }
+
+  private sanitizeUser(user: User) {
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }
