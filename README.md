@@ -7,6 +7,7 @@ Current completed parts:
 - EPIC 0: Backend setup, health check and Swagger.
 - EPIC 1: PostgreSQL database setup with Prisma.
 - EPIC 2: Authentication and users with JWT.
+- EPIC 3: Users Module, Protected Profiles and Family Links.
 
 ---
 
@@ -121,7 +122,7 @@ Expected result: the API returns database status `connected`.
 
 ---
 
-## Test EPIC 2
+## Test EPIC 2 — Authentication
 
 ### 1. Register a user
 
@@ -143,8 +144,6 @@ Example body:
 
 Expected result: the API returns an `accessToken` and the created user.
 
----
-
 ### 2. Login
 
 ```http
@@ -161,8 +160,6 @@ Example body:
 ```
 
 Expected result: the API returns an `accessToken`.
-
----
 
 ### 3. Test authenticated user
 
@@ -186,9 +183,21 @@ GET /api/v1/auth/me
 
 Expected result: the API returns the connected user information.
 
-## Test BE-008 — Users Module
+---
 
-BE-008 adds authenticated user profile routes.
+## Test EPIC 3 — Users, Protected Profiles and Family Links
+
+EPIC 3 includes:
+
+- BE-008: Users Module.
+- BE-009: Protected Profiles.
+- BE-010: Family Links.
+
+All EPIC 3 routes are protected and require a JWT token.
+
+---
+
+## Test BE-008 — Users Module
 
 Available endpoints:
 
@@ -196,8 +205,6 @@ Available endpoints:
 GET /api/v1/users/me
 PATCH /api/v1/users/me
 ```
-
-These routes are protected and require a JWT token.
 
 ### 1. Login first
 
@@ -211,7 +218,7 @@ Example body:
 
 ```json
 {
-  "email": "user@example.com",
+  "email": "yassine.test@example.com",
   "password": "Password123!"
 }
 ```
@@ -260,23 +267,268 @@ Expected result: the API returns the updated user information.
 
 Important: the `passwordHash` must never be returned in the API response.
 
-## Test BE-009 — Protected Profiles
+---
 
-BE-009 adds protected profile routes for the connected user.
+## Test BE-009 — Protected Profiles
 
 Available endpoints:
 
-````http
+```http
 GET /api/v1/protected-profiles/me
 POST /api/v1/protected-profiles/me
 PATCH /api/v1/protected-profiles/me
+```
+
+### 1. Login and authorize
+
+Login with:
+
+```http
+POST /api/v1/auth/login
+```
+
+Then copy the returned `accessToken` and authorize in Swagger using:
+
+```text
+Bearer YOUR_ACCESS_TOKEN
+```
+
+### 2. Create protected profile
+
+```http
+POST /api/v1/protected-profiles/me
+```
+
+Example body:
+
+```json
+{
+  "birthDate": "1998-05-12",
+  "address": "Tunis, Tunisia",
+  "emergencyNote": "Contacter la famille en cas d’urgence.",
+  "medicalInfo": "Aucune information médicale particulière.",
+  "isActive": true
+}
+```
+
+Expected result: the API creates the protected profile for the connected user.
+
+### 3. Get protected profile
+
+```http
+GET /api/v1/protected-profiles/me
+```
+
+Expected result: the API returns the protected profile of the connected user.
+
+### 4. Update protected profile
+
+```http
+PATCH /api/v1/protected-profiles/me
+```
+
+Example body:
+
+```json
+{
+  "address": "Sousse, Tunisia",
+  "emergencyNote": "Prévenir le contact principal en priorité.",
+  "medicalInfo": "Allergie à la pénicilline."
+}
+```
+
+Expected result: the API returns the updated protected profile.
+
 ---
-These routes are protected and require a JWT token.
-1-Login
-2. Authorize in Swagger
-3. Create protected profile
-4. Get protected profile
-5. Update protected profile
+
+## Test BE-010 — Family Links
+
+Available endpoints:
+
+```http
+POST /api/v1/family-links
+GET /api/v1/family-links/as-protected-user
+GET /api/v1/family-links/as-family-member
+PATCH /api/v1/family-links/{id}
+DELETE /api/v1/family-links/{id}
+```
+
+### 1. Create two users
+
+Create a protected user:
+
+```http
+POST /api/v1/auth/register
+```
+
+Example body:
+
+```json
+{
+  "firstName": "Protected",
+  "lastName": "User",
+  "email": "protected.user@example.com",
+  "phone": "+21611111111",
+  "password": "Password123!"
+}
+```
+
+Create a family member:
+
+```http
+POST /api/v1/auth/register
+```
+
+Example body:
+
+```json
+{
+  "firstName": "Family",
+  "lastName": "Member",
+  "email": "family.member@example.com",
+  "phone": "+21622222222",
+  "password": "Password123!"
+}
+```
+
+### 2. Login as protected user
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "protected.user@example.com",
+  "password": "Password123!"
+}
+```
+
+Copy the returned `accessToken`.
+
+### 3. Authorize in Swagger
+
+Click on:
+
+```text
+Authorize
+```
+
+Then enter:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+### 4. Create a family link
+
+```http
+POST /api/v1/family-links
+```
+
+Example body:
+
+```json
+{
+  "familyUserEmail": "family.member@example.com",
+  "relationship": "Frère",
+  "permissionLevel": "RECEIVE_ALERTS"
+}
+```
+
+Expected result: the API creates a family link.
+
+Copy the returned family link `id`.
+
+### 5. List family members of the protected user
+
+```http
+GET /api/v1/family-links/as-protected-user
+```
+
+Expected result: the API returns the family members linked to the connected protected user.
+
+### 6. Login as family member
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "family.member@example.com",
+  "password": "Password123!"
+}
+```
+
+Copy the returned `accessToken`.
+
+### 7. Authorize as family member
+
+Click on:
+
+```text
+Authorize
+```
+
+Then enter:
+
+```text
+Bearer FAMILY_MEMBER_ACCESS_TOKEN
+```
+
+### 8. List protected users linked to the family member
+
+```http
+GET /api/v1/family-links/as-family-member
+```
+
+Expected result: the API returns the protected users linked to the connected family member.
+
+### 9. Update a family link
+
+Authorize again with the protected user token:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+Then test:
+
+```http
+PATCH /api/v1/family-links/{id}
+```
+
+Example body:
+
+```json
+{
+  "relationship": "Parent",
+  "permissionLevel": "MANAGE_CONTACTS"
+}
+```
+
+Expected result: the API returns the updated family link.
+
+### 10. Delete a family link
+
+```http
+DELETE /api/v1/family-links/{id}
+```
+
+Expected result:
+
+```json
+{
+  "message": "Lien familial supprimé avec succès"
+}
+```
+
+---
 
 ## Useful commands
 
@@ -284,7 +536,7 @@ Build the project:
 
 ```bash
 npm run build
-````
+```
 
 Check Prisma schema:
 
