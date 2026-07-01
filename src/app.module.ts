@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProtectedProfilesModule } from './modules/protected-profiles/protected-profiles.module';
 import { FamilyLinksModule } from './modules/family-links/family-links.module';
+import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-contacts.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FamilyLinksModule } from './modules/family-links/family-links.module';
     AuthModule,
     ProtectedProfilesModule,
     FamilyLinksModule,
+    EmergencyContactsModule,
   ],
 })
 export class AppModule {}
