@@ -4,7 +4,7 @@ services:
     container_name: protect_assistance_postgres
     restart: unless-stopped
     ports:
-      - '55432:5432'
+      - '15432:5432'
     environment:
       POSTGRES_USER: protect_user
       POSTGRES_PASSWORD: protect_password
