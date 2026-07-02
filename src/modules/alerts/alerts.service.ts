@@ -3,10 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Severity } from '@prisma/client';
+import { AlertStatus, Prisma, Severity } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { GetAlertsQueryDto } from './dto/get-alerts-query.dto';
+import { UpdateAlertStatusDto } from './dto/update-alert-status.dto';
 
 @Injectable()
 export class AlertsService {
@@ -168,5 +169,57 @@ export class AlertsService {
     }
 
     return alert;
+  }
+  async updateAlertStatus(
+    userId: string,
+    alertId: string,
+    updateAlertStatusDto: UpdateAlertStatusDto,
+  ) {
+    const alert = await this.prisma.alert.findUnique({
+      where: {
+        id: alertId,
+      },
+      include: {
+        protectedProfile: true,
+      },
+    });
+
+    if (!alert) {
+      throw new NotFoundException('Alerte introuvable');
+    }
+
+    const isOwner = alert.protectedProfile.userId === userId;
+
+    const familyLink = await this.prisma.familyLink.findUnique({
+      where: {
+        protectedUserId_familyUserId: {
+          protectedUserId: alert.protectedProfile.userId,
+          familyUserId: userId,
+        },
+      },
+    });
+
+    const isLinkedFamilyMember = !!familyLink;
+
+    if (!isOwner && !isLinkedFamilyMember) {
+      throw new ForbiddenException(
+        'Vous n’êtes pas autorisé à modifier cette alerte',
+      );
+    }
+
+    const shouldSetResolvedAt =
+      updateAlertStatusDto.status === AlertStatus.RESOLVED ||
+      updateAlertStatusDto.status === AlertStatus.FALSE_ALARM;
+
+    return this.prisma.alert.update({
+      where: {
+        id: alertId,
+      },
+      data: {
+        status: updateAlertStatusDto.status,
+        resolvedAt: shouldSetResolvedAt ? new Date() : null,
+      },
+      include: this.alertInclude,
+    });
   }
 }

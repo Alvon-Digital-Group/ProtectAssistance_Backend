@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { GetAlertsQueryDto } from './dto/get-alerts-query.dto';
+import { UpdateAlertStatusDto } from './dto/update-alert-status.dto';
 
 type AuthenticatedUser = {
   id: string;
@@ -111,5 +113,36 @@ export class AlertsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.alertsService.getAlertById(user.id, id);
+  }
+  @Patch(':id/status')
+  @ApiOperation({
+    summary: 'Mettre à jour le statut d’une alerte',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de l’alerte',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statut de l’alerte mis à jour avec succès',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Accès interdit à cette alerte',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Alerte introuvable',
+  })
+  updateAlertStatus(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateAlertStatusDto: UpdateAlertStatusDto,
+  ) {
+    return this.alertsService.updateAlertStatus(
+      user.id,
+      id,
+      updateAlertStatusDto,
+    );
   }
 }
