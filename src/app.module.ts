@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProtectedProfilesModule } from './modules/protected-profiles/protected-profiles.module';
 import { FamilyLinksModule } from './modules/family-links/family-links.module';
 import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-contacts.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-
     ProtectedProfilesModule,
     FamilyLinksModule,
     EmergencyContactsModule,
+    AlertsModule,
   ],
 })
 export class AppModule {}
