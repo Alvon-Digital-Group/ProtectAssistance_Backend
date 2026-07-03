@@ -9,6 +9,7 @@ import { ProtectedProfilesModule } from './modules/protected-profiles/protected-
 import { FamilyLinksModule } from './modules/family-links/family-links.module';
 import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-contacts.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
+import { LocationsModule } from './modules/locations/locations.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AlertsModule } from './modules/alerts/alerts.module';
     FamilyLinksModule,
     EmergencyContactsModule,
     AlertsModule,
+    LocationsModule,
   ],
 })
 export class AppModule {}

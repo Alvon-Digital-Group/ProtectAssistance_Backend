@@ -8,6 +8,9 @@ Current completed parts:
 - EPIC 1: PostgreSQL database setup with Prisma.
 - EPIC 2: Authentication and users with JWT.
 - EPIC 3: Users Module, Protected Profiles and Family Links.
+- EPIC 4: Emergency Contacts.
+- EPIC 5: Alerts Module.
+- EPIC 6: Locations Module.
 
 ---
 
@@ -34,7 +37,7 @@ Create a `.env` file at the root of the project and add:
 NODE_ENV=development
 PORT=3000
 
-DATABASE_URL="postgresql://protect_user:protect_password@127.0.0.1:55432/protect_assistance_db?schema=public"
+DATABASE_URL="postgresql://protect_user:protect_password@127.0.0.1:15432/protect_assistance_db?schema=public"
 
 JWT_SECRET="protect_assistance_dev_secret_change_me"
 JWT_EXPIRES_IN="1d"
@@ -54,11 +57,17 @@ Check that the database container is running:
 docker ps
 ```
 
+Expected result:
+
+```text
+protect_assistance_postgres   0.0.0.0:15432->5432/tcp
+```
+
 ### 5. Run Prisma commands
 
 ```bash
 npx prisma validate
-npx prisma migrate dev
+npx prisma migrate status
 npx prisma generate
 ```
 
@@ -98,7 +107,7 @@ http://localhost:3000/api/docs
 
 ---
 
-## Test EPIC 0
+## Test EPIC 0 — Backend setup
 
 ### Health check
 
@@ -110,7 +119,7 @@ Expected result: the API returns status `ok`.
 
 ---
 
-## Test EPIC 1
+## Test EPIC 1 — Database setup
 
 ### Database health check
 
@@ -119,6 +128,13 @@ GET /api/v1/health/db
 ```
 
 Expected result: the API returns database status `connected`.
+
+You can also check Prisma with:
+
+```bash
+npx prisma validate
+npx prisma migrate status
+```
 
 ---
 
@@ -136,7 +152,7 @@ Example body:
 {
   "firstName": "Yassine",
   "lastName": "Zaghla",
-  "email": "yassine.test@example.com",
+  "email": "user@example.com",
   "phone": "+21612345678",
   "password": "Password123!"
 }
@@ -154,7 +170,7 @@ Example body:
 
 ```json
 {
-  "email": "yassine.test@example.com",
+  "email": "user@example.com",
   "password": "Password123!"
 }
 ```
@@ -218,7 +234,7 @@ Example body:
 
 ```json
 {
-  "email": "yassine.test@example.com",
+  "email": "user@example.com",
   "password": "Password123!"
 }
 ```
@@ -287,6 +303,15 @@ Login with:
 POST /api/v1/auth/login
 ```
 
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
 Then copy the returned `accessToken` and authorize in Swagger using:
 
 ```text
@@ -353,27 +378,7 @@ PATCH /api/v1/family-links/{id}
 DELETE /api/v1/family-links/{id}
 ```
 
-### 1. Create two users
-
-Create a protected user:
-
-```http
-POST /api/v1/auth/register
-```
-
-Example body:
-
-```json
-{
-  "firstName": "Protected",
-  "lastName": "User",
-  "email": "protected.user@example.com",
-  "phone": "+21611111111",
-  "password": "Password123!"
-}
-```
-
-Create a family member:
+### 1. Create a family member user
 
 ```http
 POST /api/v1/auth/register
@@ -391,6 +396,8 @@ Example body:
 }
 ```
 
+If the account already exists, login directly with this account.
+
 ### 2. Login as protected user
 
 ```http
@@ -401,7 +408,7 @@ Example body:
 
 ```json
 {
-  "email": "protected.user@example.com",
+  "email": "user@example.com",
   "password": "Password123!"
 }
 ```
@@ -530,6 +537,588 @@ Expected result:
 
 ---
 
+## Test EPIC 4 — Emergency Contacts
+
+EPIC 4 includes:
+
+- BE-011: Emergency Contacts.
+
+All EPIC 4 routes are protected and require a JWT token.
+
+---
+
+## Test BE-011 — Emergency Contacts
+
+Available endpoints:
+
+```http
+POST /api/v1/emergency-contacts
+GET /api/v1/emergency-contacts
+GET /api/v1/emergency-contacts/{id}
+PATCH /api/v1/emergency-contacts/{id}
+DELETE /api/v1/emergency-contacts/{id}
+```
+
+Before creating emergency contacts, the connected user must have a protected profile.
+
+### 1. Login and authorize
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Copy the returned `accessToken`, then authorize in Swagger:
+
+```text
+Bearer YOUR_ACCESS_TOKEN
+```
+
+### 2. Verify protected profile
+
+```http
+GET /api/v1/protected-profiles/me
+```
+
+If the API returns `404`, create the protected profile first:
+
+```http
+POST /api/v1/protected-profiles/me
+```
+
+Example body:
+
+```json
+{
+  "birthDate": "1998-05-12",
+  "address": "Tunis, Tunisia",
+  "emergencyNote": "Contacter la famille en cas d’urgence.",
+  "medicalInfo": "Aucune information médicale particulière.",
+  "isActive": true
+}
+```
+
+### 3. Create an emergency contact
+
+```http
+POST /api/v1/emergency-contacts
+```
+
+Example body:
+
+```json
+{
+  "name": "Mère",
+  "phone": "+21612345678",
+  "email": "mere@example.com",
+  "priority": 1,
+  "receiveSms": true,
+  "receivePush": false,
+  "receiveEmail": true,
+  "receiveCall": false
+}
+```
+
+Expected result: the API creates an emergency contact linked to the protected profile.
+
+Copy the returned emergency contact `id`.
+
+### 4. List emergency contacts
+
+```http
+GET /api/v1/emergency-contacts
+```
+
+Expected result: the API returns all emergency contacts of the connected protected user.
+
+### 5. Get one emergency contact
+
+```http
+GET /api/v1/emergency-contacts/{id}
+```
+
+Expected result: the API returns the selected emergency contact.
+
+### 6. Update emergency contact
+
+```http
+PATCH /api/v1/emergency-contacts/{id}
+```
+
+Example body:
+
+```json
+{
+  "name": "Mère updated",
+  "phone": "+21699999999",
+  "priority": 2,
+  "receiveSms": true,
+  "receiveEmail": false
+}
+```
+
+Expected result: the API returns the updated emergency contact.
+
+### 7. Delete emergency contact
+
+```http
+DELETE /api/v1/emergency-contacts/{id}
+```
+
+Expected result:
+
+```json
+{
+  "message": "Contact d’urgence supprimé avec succès"
+}
+```
+
+---
+
+## Test EPIC 5 — Alerts
+
+EPIC 5 includes:
+
+- BE-012: Create Alert.
+- BE-013: Get Alerts.
+- BE-014: Update Alert Status.
+
+All EPIC 5 routes are protected and require a JWT token.
+
+---
+
+## Test BE-012 — Create Alert
+
+Available endpoint:
+
+```http
+POST /api/v1/alerts
+```
+
+Before creating an alert, the connected user must have a protected profile.
+
+### 1. Login and authorize
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Copy the returned `accessToken`, then authorize in Swagger:
+
+```text
+Bearer YOUR_ACCESS_TOKEN
+```
+
+### 2. Create an alert
+
+```http
+POST /api/v1/alerts
+```
+
+Example body:
+
+```json
+{
+  "type": "PANIC_BUTTON",
+  "severity": "CRITICAL",
+  "message": "Alerte déclenchée depuis le bouton panique.",
+  "location": {
+    "latitude": 36.8065,
+    "longitude": 10.1815,
+    "accuracy": 20
+  }
+}
+```
+
+Expected result: the API creates an alert with status `CREATED`.
+
+Copy the returned alert `id`.
+
+---
+
+## Test BE-013 — Get Alerts
+
+Available endpoints:
+
+```http
+GET /api/v1/alerts
+GET /api/v1/alerts/family
+GET /api/v1/alerts/{id}
+```
+
+### 1. Login and authorize as protected user
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize with:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+### 2. List my alerts
+
+```http
+GET /api/v1/alerts
+```
+
+Expected result: the API returns alerts created by the connected protected user.
+
+Optional filters:
+
+```http
+GET /api/v1/alerts?status=CREATED
+GET /api/v1/alerts?type=PANIC_BUTTON
+GET /api/v1/alerts?severity=CRITICAL
+GET /api/v1/alerts?limit=10
+```
+
+### 3. Get one alert by ID
+
+```http
+GET /api/v1/alerts/{id}
+```
+
+Expected result: the API returns the requested alert if the connected user is allowed to view it.
+
+### 4. List family alerts
+
+Login as a family member linked to the protected user:
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "family.member@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize with:
+
+```text
+Bearer FAMILY_MEMBER_ACCESS_TOKEN
+```
+
+Then test:
+
+```http
+GET /api/v1/alerts/family
+```
+
+Expected result: the API returns alerts from protected users linked to the connected family member.
+
+### 5. Get protected user alert as family member
+
+Still authorized as family member, test:
+
+```http
+GET /api/v1/alerts/{id}
+```
+
+Expected result: the family member can view the alert of the linked protected user.
+
+---
+
+## Test BE-014 — Update Alert Status
+
+Available endpoint:
+
+```http
+PATCH /api/v1/alerts/{id}/status
+```
+
+### 1. Login and authorize as protected user
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize with:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+### 2. Get an alert ID
+
+```http
+GET /api/v1/alerts
+```
+
+Copy one alert `id`.
+
+### 3. Update alert status
+
+```http
+PATCH /api/v1/alerts/{id}/status
+```
+
+Example body:
+
+```json
+{
+  "status": "ACKNOWLEDGED"
+}
+```
+
+Expected result: the API returns the alert with the updated status.
+
+Other possible statuses:
+
+```text
+CREATED
+SENT
+ACKNOWLEDGED
+IN_PROGRESS
+RESOLVED
+FALSE_ALARM
+```
+
+### 4. Test resolved status
+
+```http
+PATCH /api/v1/alerts/{id}/status
+```
+
+Example body:
+
+```json
+{
+  "status": "RESOLVED"
+}
+```
+
+Expected result: the field `resolvedAt` is automatically filled.
+
+### 5. Test update status as family member
+
+Login and authorize as family member, then test:
+
+```http
+PATCH /api/v1/alerts/{id}/status
+```
+
+Example body:
+
+```json
+{
+  "status": "ACKNOWLEDGED"
+}
+```
+
+Expected result: a linked family member can update the status of the protected user alert.
+
+---
+
+## Test EPIC 6 — Locations Module
+
+EPIC 6 includes:
+
+- BE-015: Locations Module.
+
+All EPIC 6 routes are protected and require a JWT token.
+
+---
+
+## Test BE-015 — Locations Module
+
+Available endpoints:
+
+```http
+GET /api/v1/locations/alerts/{alertId}
+PUT /api/v1/locations/alerts/{alertId}
+```
+
+### 1. Login and authorize as protected user
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize with:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+### 2. Get an alert ID
+
+Use:
+
+```http
+GET /api/v1/alerts
+```
+
+Copy the `id` of one alert.
+
+### 3. Get alert location
+
+```http
+GET /api/v1/locations/alerts/{alertId}
+```
+
+Expected result: the API returns the location linked to the alert.
+
+### 4. Update alert location
+
+```http
+PUT /api/v1/locations/alerts/{alertId}
+```
+
+Example body:
+
+```json
+{
+  "latitude": 35.8256,
+  "longitude": 10.63699,
+  "accuracy": 15
+}
+```
+
+Expected result: the API updates the alert location and returns the new coordinates.
+
+### 5. Verify updated location
+
+```http
+GET /api/v1/locations/alerts/{alertId}
+```
+
+Expected result: the API returns the updated coordinates.
+
+### 6. Test family member access
+
+Login and authorize as family member:
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "family.member@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize with:
+
+```text
+Bearer FAMILY_MEMBER_ACCESS_TOKEN
+```
+
+A linked family member can view the alert location:
+
+```http
+GET /api/v1/locations/alerts/{alertId}
+```
+
+Expected result: the API returns the alert location.
+
+A linked family member cannot update the alert location:
+
+```http
+PUT /api/v1/locations/alerts/{alertId}
+```
+
+Example body:
+
+```json
+{
+  "latitude": 34.0,
+  "longitude": 9.0,
+  "accuracy": 30
+}
+```
+
+Expected result: the API returns `403 Forbidden`.
+
+The update route is reserved for the protected user who owns the alert.
+
+---
+
+## Prisma Studio verification
+
+Open Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
+Check the following tables:
+
+```text
+User
+ProtectedProfile
+FamilyLink
+EmergencyContact
+Alert
+Location
+```
+
+Expected result:
+
+- `User`: contains the protected user and the family member.
+- `ProtectedProfile`: contains the profile linked to `user@example.com`.
+- `FamilyLink`: contains the relation between `user@example.com` and `family.member@example.com`.
+- `EmergencyContact`: contains emergency contacts linked to the protected profile.
+- `Alert`: contains alerts created by the protected user.
+- `Location`: contains alert locations.
+
+---
+
 ## Useful commands
 
 Build the project:
@@ -550,6 +1139,12 @@ Check migration status:
 npx prisma migrate status
 ```
 
+Generate Prisma Client:
+
+```bash
+npx prisma generate
+```
+
 Start Docker database:
 
 ```bash
@@ -560,4 +1155,10 @@ Stop Docker database:
 
 ```bash
 docker compose down
+```
+
+Start backend:
+
+```bash
+npm run start:dev
 ```
