@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { join } from 'path';
+import { static as expressStatic } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +14,8 @@ async function bootstrap() {
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
   const port = configService.get<number>('app.port') || 3000;
   const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
+
+  app.use('/uploads', expressStatic(join(process.cwd(), 'uploads')));
 
   app.setGlobalPrefix(apiPrefix);
 

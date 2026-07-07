@@ -1089,6 +1089,116 @@ The update route is reserved for the protected user who owns the alert.
 
 ---
 
+## Test EPIC 7 — Evidence Module
+
+EPIC 7 includes:
+
+- BE-016: Evidence Module.
+
+All EPIC 7 routes are protected and require a JWT token.
+
+---
+
+## Test BE-016 — Audio and Video Evidence
+
+Available endpoints:
+
+```http
+POST /api/v1/evidence/alerts/{alertId}/upload
+GET /api/v1/evidence/alerts/{alertId}
+GET /api/v1/evidence/{id}
+DELETE /api/v1/evidence/{id}
+```
+
+### 1. Login and authorize as protected user
+
+```http
+POST /api/v1/auth/login
+```
+
+Example body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+Authorize in Swagger with:
+
+```text
+Bearer PROTECTED_USER_ACCESS_TOKEN
+```
+
+### 2. Get an alert ID
+
+```http
+GET /api/v1/alerts
+```
+
+Copy one alert `id`.
+
+### 3. Upload audio or video evidence
+
+```http
+POST /api/v1/evidence/alerts/{alertId}/upload
+```
+
+In Swagger, select a file in the `file` field.
+
+Allowed file types:
+
+```text
+audio/*
+video/*
+```
+
+Expected result: the API creates an evidence record linked to the alert.
+
+### 4. List evidence of an alert
+
+```http
+GET /api/v1/evidence/alerts/{alertId}
+```
+
+Expected result: the API returns all evidence linked to the alert.
+
+### 5. Get one evidence by ID
+
+```http
+GET /api/v1/evidence/{id}
+```
+
+Expected result: the API returns the selected evidence.
+
+### 6. Family member access
+
+A linked family member can view evidence:
+
+```http
+GET /api/v1/evidence/alerts/{alertId}
+GET /api/v1/evidence/{id}
+```
+
+However, a family member cannot upload or delete evidence.
+
+### 7. Delete evidence
+
+Only the protected user who owns the alert can delete evidence:
+
+```http
+DELETE /api/v1/evidence/{id}
+```
+
+Expected result:
+
+```json
+{
+  "message": "Preuve supprimée avec succès"
+}
+```
+
 ## Prisma Studio verification
 
 Open Prisma Studio:
