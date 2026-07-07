@@ -10,6 +10,7 @@ import { FamilyLinksModule } from './modules/family-links/family-links.module';
 import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-contacts.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { LocationsModule } from './modules/locations/locations.module';
+import { EvidenceModule } from './modules/evidence/evidence.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LocationsModule } from './modules/locations/locations.module';
     EmergencyContactsModule,
     AlertsModule,
     LocationsModule,
+    EvidenceModule,
   ],
 })
 export class AppModule {}

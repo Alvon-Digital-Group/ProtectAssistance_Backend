@@ -27,5 +27,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+uploads/
 
 /generated/prisma
