@@ -197,15 +197,17 @@ model Location {
 }
 
 model Evidence {
-  id        String       @id @default(uuid()) @db.Uuid
-  alertId   String       @db.Uuid
-  type      EvidenceType
-  fileUrl   String
-  fileName  String?
-  mimeType  String?
-  size      Int?
-  duration  Int?
-  createdAt DateTime     @default(now())
+  id              String       @id @default(uuid()) @db.Uuid
+  alertId         String       @db.Uuid
+  type            EvidenceType
+  fileUrl         String
+  fileName        String?
+  mimeType        String?
+  size            Int?
+  duration        Int?
+  storageProvider String       @default("local")
+  storageKey      String?
+  createdAt       DateTime     @default(now())
 
   alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
 

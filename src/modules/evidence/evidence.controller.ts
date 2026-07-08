@@ -20,10 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { existsSync, mkdirSync } from 'fs';
-import { extname, join } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EvidenceService } from './evidence.service';
@@ -44,23 +41,7 @@ export class EvidenceController {
   @Post('alerts/:alertId/upload')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, callback) => {
-          const uploadPath = join(process.cwd(), 'uploads', 'evidence');
-
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-
-          callback(null, uploadPath);
-        },
-        filename: (_req, file, callback) => {
-          const fileExtension = extname(file.originalname);
-          const fileName = `${randomUUID()}${fileExtension}`;
-
-          callback(null, fileName);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (_req, file, callback) => {
         const isAudio = file.mimetype.startsWith('audio/');
         const isVideo = file.mimetype.startsWith('video/');
