@@ -1,17 +1,21 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { EvidenceType, Prisma } from '@prisma/client';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { PrismaService } from '../../database/prisma.service';
+import { STORAGE_SERVICE, StorageService } from '../storage/storage.types';
 
 @Injectable()
 export class EvidenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(STORAGE_SERVICE)
+    private readonly storageService: StorageService,
+  ) {}
 
   private readonly evidenceInclude = {
     alert: {
@@ -82,19 +86,6 @@ export class EvidenceService {
     );
   }
 
-  private deleteLocalFile(fileUrl: string) {
-    if (!fileUrl.startsWith('/uploads/')) {
-      return;
-    }
-
-    const relativePath = fileUrl.replace(/^\/uploads\//, '');
-    const localPath = join(process.cwd(), 'uploads', relativePath);
-
-    if (existsSync(localPath)) {
-      unlinkSync(localPath);
-    }
-  }
-
   async uploadEvidence(
     userId: string,
     alertId: string,
@@ -116,13 +107,17 @@ export class EvidenceService {
 
     const evidenceType = this.getEvidenceTypeFromMimeType(file.mimetype);
 
+    const storedFile = await this.storageService.uploadEvidenceFile(file);
+
     return this.prisma.evidence.create({
       data: {
         alertId: alert.id,
         type: evidenceType,
-        fileUrl: `/uploads/evidence/${file.filename}`,
-        mimeType: file.mimetype,
-        size: file.size,
+        fileUrl: storedFile.url,
+        mimeType: storedFile.mimeType,
+        size: storedFile.size,
+        storageProvider: storedFile.provider,
+        storageKey: storedFile.key,
       },
       include: this.evidenceInclude,
     });
@@ -205,7 +200,9 @@ export class EvidenceService {
       },
     });
 
-    this.deleteLocalFile(evidence.fileUrl);
+    if (evidence.storageKey) {
+      await this.storageService.deleteFile(evidence.storageKey);
+    }
 
     return {
       message: 'Preuve supprimée avec succès',
