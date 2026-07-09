@@ -11,6 +11,7 @@ import { EmergencyContactsModule } from './modules/emergency-contacts/emergency-
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { EvidenceModule } from './modules/evidence/evidence.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EvidenceModule } from './modules/evidence/evidence.module';
     AlertsModule,
     LocationsModule,
     EvidenceModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

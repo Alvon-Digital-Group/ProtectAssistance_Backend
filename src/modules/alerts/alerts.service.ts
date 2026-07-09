@@ -8,10 +8,14 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { GetAlertsQueryDto } from './dto/get-alerts-query.dto';
 import { UpdateAlertStatusDto } from './dto/update-alert-status.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AlertsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private readonly alertInclude = {
     location: true,
@@ -55,7 +59,7 @@ export class AlertsService {
 
     const location = createAlertDto.location;
 
-    return this.prisma.alert.create({
+    const alert = await this.prisma.alert.create({
       data: {
         protectedProfileId: protectedProfile.id,
         type: createAlertDto.type,
@@ -78,6 +82,10 @@ export class AlertsService {
         location: true,
       },
     });
+
+    await this.notificationsService.createAlertNotifications(alert.id);
+
+    return alert;
   }
 
   async getMyAlerts(userId: string, query: GetAlertsQueryDto) {
