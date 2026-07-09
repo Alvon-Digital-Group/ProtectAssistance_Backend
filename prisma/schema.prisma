@@ -216,19 +216,28 @@ model Evidence {
 }
 
 model Notification {
-  id          String              @id @default(uuid()) @db.Uuid
-  alertId     String              @db.Uuid
-  recipientId String?             @db.Uuid
-  channel     NotificationChannel
-  status      NotificationStatus  @default(PENDING)
-  sentAt      DateTime?
-  createdAt   DateTime            @default(now())
+  id String @id @default(uuid()) @db.Uuid
 
-  alert     Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  recipient User? @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  alertId String? @db.Uuid
+  alert   Alert?  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  channel NotificationChannel @default(PUSH)
+  status  NotificationStatus  @default(PENDING)
+
+  title        String
+  body         String
+  payload      Json?
+  errorMessage String?
+  sentAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
   @@index([alertId])
-  @@index([recipientId])
   @@index([status])
 }
 
