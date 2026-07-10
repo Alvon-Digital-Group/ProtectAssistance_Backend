@@ -5,11 +5,17 @@ import {
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { Logger } from '@nestjs/common';
+import { FirebasePushService } from './firebase-push.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebasePush: FirebasePushService,
+  ) {}
 
+  private readonly logger = new Logger(NotificationsService.name);
   private readonly notificationInclude = {
     user: {
       select: {
@@ -127,5 +133,82 @@ export class NotificationsService {
     }
 
     return notification;
+  }
+  async sendNotification(notificationId: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id: notificationId },
+      include: {
+        user: {
+          include: {
+            fcmTokens: {
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        alert: true,
+      },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification introuvable');
+    }
+
+    try {
+      const tokens = notification.user.fcmTokens.map((item) => item.token);
+
+      await this.firebasePush.sendPushToTokens({
+        tokens,
+        title: notification.title,
+        body: notification.body,
+        data: {
+          notificationId: notification.id,
+          alertId: notification.alertId ?? '',
+        },
+      });
+
+      return this.prisma.notification.update({
+        where: { id: notification.id },
+        data: {
+          status: NotificationStatus.SENT,
+          sentAt: new Date(),
+          errorMessage: null,
+        },
+        include: this.notificationInclude,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'FCM send failed';
+
+      this.logger.error(message);
+
+      return this.prisma.notification.update({
+        where: { id: notification.id },
+        data: {
+          status: NotificationStatus.FAILED,
+          errorMessage: message,
+        },
+        include: this.notificationInclude,
+      });
+    }
+  }
+
+  async sendPendingNotificationsForAlert(alertId: string) {
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        alertId,
+        status: NotificationStatus.PENDING,
+      },
+    });
+
+    const results = [];
+
+    for (const notification of notifications) {
+      const result = await this.sendNotification(notification.id);
+      results.push(result);
+    }
+
+    return results;
   }
 }
