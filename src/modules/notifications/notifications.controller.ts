@@ -4,6 +4,7 @@ import {
   Param,
   ParseUUIDPipe,
   UseGuards,
+  Post,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -42,5 +43,21 @@ export class NotificationsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.notificationsService.getNotificationById(user.id, id);
+  }
+
+  @Post('alerts/:alertId/send-pending')
+  @ApiOperation({ summary: 'Envoyer les notifications PENDING d’une alerte' })
+  @ApiParam({ name: 'alertId', description: 'ID de l’alerte' })
+  sendPendingNotificationsForAlert(
+    @Param('alertId', ParseUUIDPipe) alertId: string,
+  ) {
+    return this.notificationsService.sendPendingNotificationsForAlert(alertId);
+  }
+
+  @Post(':id/send')
+  @ApiOperation({ summary: 'Envoyer une notification push par ID' })
+  @ApiParam({ name: 'id', description: 'ID de la notification' })
+  sendNotification(@Param('id', ParseUUIDPipe) id: string) {
+    return this.notificationsService.sendNotification(id);
   }
 }
