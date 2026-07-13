@@ -12,6 +12,7 @@ import { AlertsModule } from './modules/alerts/alerts.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { EvidenceModule } from './modules/evidence/evidence.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { FcmTokensModule } from './modules/fcm-tokens/fcm-tokens.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     LocationsModule,
     EvidenceModule,
     NotificationsModule,
+    FcmTokensModule,
   ],
 })
 export class AppModule {}
