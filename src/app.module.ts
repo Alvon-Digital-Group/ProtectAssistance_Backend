@@ -14,6 +14,7 @@ import { EvidenceModule } from './modules/evidence/evidence.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FcmTokensModule } from './modules/fcm-tokens/fcm-tokens.module';
 import { SafeZonesModule } from './modules/safe-zones/safe-zones.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { SafeZonesModule } from './modules/safe-zones/safe-zones.module';
     NotificationsModule,
     FcmTokensModule,
     SafeZonesModule,
+    SubscriptionsModule,
   ],
 })
 export class AppModule {}
