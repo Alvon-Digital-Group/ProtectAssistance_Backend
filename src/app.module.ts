@@ -16,6 +16,7 @@ import { FcmTokensModule } from './modules/fcm-tokens/fcm-tokens.module';
 import { SafeZonesModule } from './modules/safe-zones/safe-zones.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     SafeZonesModule,
     SubscriptionsModule,
     DashboardModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
