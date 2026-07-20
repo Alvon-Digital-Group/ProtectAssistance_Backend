@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +18,20 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
+    const existingUser = await this.usersService.findByEmailOrPhone(
+      registerDto.email,
+      registerDto.phone,
+    );
+
+    if (existingUser) {
+      if (existingUser.email === registerDto.email) {
+        throw new ConflictException('Cet email est déjà utilisé');
+      }
+
+      if (existingUser.phone === registerDto.phone) {
+        throw new ConflictException('Ce numéro de téléphone est déjà utilisé');
+      }
+    }
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
     const user = await this.usersService.createUser({
