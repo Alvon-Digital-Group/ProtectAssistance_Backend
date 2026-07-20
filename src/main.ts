@@ -5,15 +5,17 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { join } from 'path';
 import { static as expressStatic } from 'express';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
   const port = configService.get<number>('app.port') || 3000;
   const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.use('/uploads', expressStatic(join(process.cwd(), 'uploads')));
 
