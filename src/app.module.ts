@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
 import { envValidationSchema } from './config/env.validation';
@@ -17,6 +18,7 @@ import { SafeZonesModule } from './modules/safe-zones/safe-zones.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 @Module({
   imports: [
@@ -41,6 +43,12 @@ import { AdminModule } from './modules/admin/admin.module';
     SubscriptionsModule,
     DashboardModule,
     AdminModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

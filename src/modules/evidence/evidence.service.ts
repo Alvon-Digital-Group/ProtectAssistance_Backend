@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { EvidenceType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
@@ -16,6 +17,7 @@ export class EvidenceService {
     @Inject(STORAGE_SERVICE)
     private readonly storageService: StorageService,
   ) {}
+  private readonly logger = new Logger(EvidenceService.name);
 
   private readonly evidenceInclude = {
     alert: {
@@ -108,6 +110,9 @@ export class EvidenceService {
     const evidenceType = this.getEvidenceTypeFromMimeType(file.mimetype);
 
     const storedFile = await this.storageService.uploadEvidenceFile(file);
+    this.logger.log(
+      `Evidence uploaded alertId=${alert.id} fileUrl=${storedFile.url}`,
+    );
 
     return this.prisma.evidence.create({
       data: {
