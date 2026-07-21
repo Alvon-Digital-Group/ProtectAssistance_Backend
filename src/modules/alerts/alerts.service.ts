@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { AlertStatus, Prisma, Severity } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
@@ -16,6 +17,8 @@ export class AlertsService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  private readonly logger = new Logger(AlertsService.name);
 
   private readonly alertInclude = {
     location: true,
@@ -84,6 +87,11 @@ export class AlertsService {
     });
 
     await this.notificationsService.createAlertNotifications(alert.id);
+    this.logger.log(`Notifications créées pour l'alerte ${alert.id}`);
+
+    await this.notificationsService.sendPendingNotificationsForAlert(alert.id);
+
+    this.logger.log(`Notifications envoyées pour l'alerte ${alert.id}`);
 
     return alert;
   }

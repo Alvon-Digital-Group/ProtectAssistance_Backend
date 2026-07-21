@@ -103,7 +103,9 @@ export class NotificationsService {
         }),
       ),
     );
-
+    this.logger.log(
+      `Notifications created for alertId=${alert.id} count=${notifications.length}`,
+    );
     return notifications;
   }
 
