@@ -1229,6 +1229,343 @@ Expected result:
 
 ---
 
+## BE-017 — Notifications
+
+### Get my notifications
+
+```http
+GET /api/v1/notifications
+```
+
+**Authorization**
+
+```
+Bearer <JWT>
+```
+
+Expected result:
+
+- Returns all notifications belonging to the authenticated user.
+- Notifications are ordered from newest to oldest.
+
+---
+
+### Mark a notification as read
+
+```http
+PATCH /api/v1/notifications/{notificationId}/read
+```
+
+Expected result:
+
+- Notification status is updated.
+- `readAt` is populated.
+- Returns the updated notification.
+
+---
+
+## BE-018 — Firebase Cloud Messaging
+
+### Register an FCM token
+
+```http
+POST /api/v1/firebase/tokens
+```
+
+Example body
+
+```json
+{
+  "token": "YOUR_FIREBASE_TOKEN"
+}
+```
+
+Expected result:
+
+- The FCM token is stored for the authenticated user.
+- Duplicate tokens are ignored or updated.
+
+---
+
+### Delete an FCM token
+
+```http
+DELETE /api/v1/firebase/tokens/{token}
+```
+
+Expected result:
+
+- Token is removed from the database.
+- Push notifications will no longer be sent to that device.
+
+---
+
+## BE-019 — Safety Zones
+
+### Create a safety zone
+
+```http
+POST /api/v1/safety-zones
+```
+
+Example
+
+```json
+{
+  "name": "Home",
+  "latitude": 36.8065,
+  "longitude": 10.1815,
+  "radius": 150
+}
+```
+
+Expected result:
+
+- Creates a new safety zone.
+- Returns the created zone.
+
+---
+
+### Get my safety zones
+
+```http
+GET /api/v1/safety-zones
+```
+
+Expected result:
+
+- Returns every safety zone belonging to the authenticated user.
+
+---
+
+### Update a safety zone
+
+```http
+PATCH /api/v1/safety-zones/{id}
+```
+
+Expected result:
+
+- Updates the specified zone.
+
+---
+
+### Delete a safety zone
+
+```http
+DELETE /api/v1/safety-zones/{id}
+```
+
+Expected result:
+
+- Zone is permanently removed.
+
+---
+
+## BE-020 — Subscriptions
+
+### Get my subscription
+
+```http
+GET /api/v1/subscriptions/me
+```
+
+Expected result:
+
+Returns something similar to:
+
+```json
+{
+  "plan": "FREE",
+  "status": "ACTIVE",
+  "startDate": "...",
+  "endDate": null
+}
+```
+
+---
+
+### Update subscription (Admin)
+
+```http
+PATCH /api/v1/subscriptions/{userId}
+```
+
+Expected result:
+
+- Updates the user's subscription plan and status.
+
+---
+
+## BE-021 — Dashboard (Family Member)
+
+Authenticate using a **FAMILY_MEMBER** account linked to at least one protected user.
+
+### Get linked protected profiles
+
+```http
+GET /api/v1/dashboard/protected-profiles
+```
+
+Expected result:
+
+- Returns every protected profile linked to the authenticated family member.
+
+---
+
+### Get dashboard alerts
+
+```http
+GET /api/v1/dashboard/alerts
+```
+
+Expected result:
+
+- Returns alerts from linked protected users only.
+
+---
+
+### Get dashboard alert details
+
+```http
+GET /api/v1/dashboard/alerts/{id}
+```
+
+Expected result:
+
+- Returns complete information about the selected alert.
+- Returns **403 Forbidden** if the alert does not belong to a linked protected user.
+
+---
+
+## BE-022 — Dashboard Administration
+
+Authenticate using an **ADMIN** account.
+
+### List all users
+
+```http
+GET /api/v1/admin/users
+```
+
+Expected result:
+
+- Returns every registered user.
+
+---
+
+### List all alerts
+
+```http
+GET /api/v1/admin/alerts
+```
+
+Expected result:
+
+- Returns every alert stored in the system.
+
+---
+
+### Get dashboard statistics
+
+```http
+GET /api/v1/admin/stats
+```
+
+Expected result:
+
+Returns global statistics, for example:
+
+- Total users
+- Protected users
+- Family members
+- Total alerts
+- Active subscriptions
+
+---
+
+## BE-023 — Logging
+
+No endpoint is required.
+
+Every request should automatically generate logs similar to:
+
+```text
+[REQUEST] POST /api/v1/auth/login
+
+[RESPONSE] POST /api/v1/auth/login 102ms
+```
+
+Verify:
+
+- HTTP method
+- Endpoint
+- Execution time
+- Authenticated user (when available)
+
+---
+
+## BE-024 — Exception Handling
+
+Test invalid requests.
+
+Examples:
+
+### Non-existing resource
+
+```http
+GET /api/v1/alerts/invalid-id
+```
+
+Expected result:
+
+```json
+{
+  "success": false,
+  "statusCode": 404,
+  "message": "...",
+  "timestamp": "...",
+  "path": "...",
+  "method": "GET"
+}
+```
+
+---
+
+### Unauthorized request
+
+Call any protected endpoint without a JWT.
+
+Expected result:
+
+```
+401 Unauthorized
+```
+
+---
+
+### Forbidden request
+
+Attempt to access another user's protected resource.
+
+Expected result:
+
+```
+403 Forbidden
+```
+
+---
+
+### Validation error
+
+Send invalid request data (missing required fields, invalid email, etc.).
+
+Expected result:
+
+```
+400 Bad Request
+```
+
 ## Useful commands
 
 Build the project:
@@ -1272,3 +1609,14 @@ Start backend:
 ```bash
 npm run start:dev
 ```
+
+## 📚 Documentation
+
+Additional technical documentation is available in the `docs/` folder:
+
+| Document                       | Description                                                                                                                                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **api-validation-scenario.md** | Provides a complete API testing guide, including prerequisites, test accounts, validation scenarios, expected responses, and error cases to verify the backend functionality.                                                            |
+| **backend-workflows.md**       | Describes the main business workflows implemented in the backend, explaining how requests are processed from the client to the database and external services (e.g., alerts, notifications, dashboard, authentication).                  |
+| **developer-guide.md**         | Serves as a reference for backend developers, explaining the project structure, coding conventions, architecture, development workflow, testing, authentication, validation, and best practices for extending the application.           |
+| **project-architecture.md**    | Presents the overall system architecture, including the application layers, module organization, request lifecycle, database interactions, security mechanisms, and integration with external services such as Firebase Cloud Messaging. |
