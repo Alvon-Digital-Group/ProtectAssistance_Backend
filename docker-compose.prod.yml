@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: protect_assistance_postgres_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: protect_user
+      POSTGRES_PASSWORD: protect_password
+      POSTGRES_DB: protect_assistance_db
+    volumes:
+      - protect_assistance_pgdata_prod:/var/lib/postgresql/data
+    ports:
+      - '15432:5432'
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: protect_assistance_api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://protect_user:protect_password@postgres:5432/protect_assistance_db?schema=public
+      JWT_SECRET: change_me
+      JWT_EXPIRES_IN: 1d
+      STORAGE_PROVIDER: local
+      FCM_ENABLED: 'false'
+    volumes:
+      - protect_assistance_uploads:/app/uploads
+
+volumes:
+  protect_assistance_pgdata_prod:
+  protect_assistance_uploads:
