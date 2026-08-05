@@ -49,9 +49,13 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Envoyer les notifications PENDING d’une alerte' })
   @ApiParam({ name: 'alertId', description: 'ID de l’alerte' })
   sendPendingNotificationsForAlert(
+    @CurrentUser() user: AuthenticatedUser,
     @Param('alertId', ParseUUIDPipe) alertId: string,
   ) {
-    return this.notificationsService.sendPendingNotificationsForAlert(alertId);
+    return this.notificationsService.sendPendingNotificationsForAlert(
+      alertId,
+      user.id,
+    );
   }
 
   @Post(':id/send')

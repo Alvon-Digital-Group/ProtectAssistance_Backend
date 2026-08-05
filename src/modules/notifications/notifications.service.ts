@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   NotificationChannel,
   NotificationStatus,
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
-import { Logger } from '@nestjs/common';
 import { FirebasePushService } from './firebase-push.service';
 
 @Injectable()
@@ -196,7 +200,34 @@ export class NotificationsService {
     }
   }
 
-  async sendPendingNotificationsForAlert(alertId: string) {
+  private async assertAlertOwner(alertId: string, userId: string) {
+    const alert = await this.prisma.alert.findUnique({
+      where: { id: alertId },
+      select: {
+        protectedProfile: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    if (!alert) {
+      throw new NotFoundException('Alerte introuvable');
+    }
+
+    if (alert.protectedProfile.userId !== userId) {
+      throw new ForbiddenException(
+        'Vous n’êtes pas autorisé à relancer l’envoi pour cette alerte',
+      );
+    }
+  }
+
+  async sendPendingNotificationsForAlert(alertId: string, userId?: string) {
+    if (userId) {
+      await this.assertAlertOwner(alertId, userId);
+    }
+
     const notifications = await this.prisma.notification.findMany({
       where: {
         alertId,
