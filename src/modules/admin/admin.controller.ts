@@ -1,4 +1,9 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -25,6 +30,12 @@ export class AdminController {
   @ApiOperation({ summary: 'Lister les alertes' })
   getAlerts() {
     return this.adminService.getAlerts();
+  }
+
+  @Get('users/:id/dashboard')
+  @ApiOperation({ summary: 'Récupérer le dashboard complet d’un utilisateur' })
+  getUserDashboard(@Param('id') id: string) {
+    return this.adminService.getUserDashboardById(id);
   }
 
   @Get('stats')
